@@ -61,6 +61,7 @@ export interface ListControllerProps<RecordType extends Record = Record> {
     displayedFilters: any;
     error?: any;
     exporter?: Exporter | false;
+    filter?: FilterPayload;
     filterValues: any;
     hasCreate: boolean;
     hideFilter: (filterName: string) => void;
@@ -160,7 +161,15 @@ const useListController = <RecordType extends Record = Record>(
                     typeof error === 'string'
                         ? error
                         : error.message || 'ra.notification.http_error',
-                    'warning'
+                    'warning',
+                    {
+                        _:
+                            typeof error === 'string'
+                                ? error
+                                : error && error.message
+                                ? error.message
+                                : undefined,
+                    }
                 ),
         }
     );
@@ -242,6 +251,7 @@ const useListController = <RecordType extends Record = Record>(
         displayedFilters: query.displayedFilters,
         error,
         exporter,
+        filter,
         filterValues: query.filterValues,
         hasCreate,
         hideFilter: queryModifiers.hideFilter,

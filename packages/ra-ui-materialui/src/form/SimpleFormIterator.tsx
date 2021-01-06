@@ -105,6 +105,7 @@ const SimpleFormIterator: FC<SimpleFormIteratorProps> = props => {
         record,
         resource,
         source,
+        disabled,
         disableAdd,
         disableRemove,
         variant,
@@ -113,6 +114,7 @@ const SimpleFormIterator: FC<SimpleFormIteratorProps> = props => {
         defaultValue,
     } = props;
     const classes = useStyles(props);
+    const nodeRef = useRef(null);
 
     // We need a unique id for each field for a proper enter/exit animation
     // so we keep an internal map between the field position and an auto-increment id
@@ -183,6 +185,7 @@ const SimpleFormIterator: FC<SimpleFormIteratorProps> = props => {
             <TransitionGroup component={null}>
                 {fields.map((member, index) => (
                     <CSSTransition
+                        nodeRef={nodeRef}
                         key={ids.current[index]}
                         timeout={500}
                         classNames="fade"
@@ -220,6 +223,7 @@ const SimpleFormIterator: FC<SimpleFormIteratorProps> = props => {
                                                                 ? `resources.${resource}.fields.${input.props.source}`
                                                                 : undefined
                                                             : input.props.label,
+                                                    disabled,
                                                 })}
                                                 record={
                                                     (records &&
@@ -233,28 +237,29 @@ const SimpleFormIterator: FC<SimpleFormIteratorProps> = props => {
                                         ) : null
                                 )}
                             </section>
-                            {!disableRemoveField(
-                                (records && records[index]) || {},
-                                disableRemove
-                            ) && (
-                                <span className={classes.action}>
-                                    {cloneElement(removeButton, {
-                                        onClick: handleRemoveButtonClick(
-                                            removeButton.props.onClick,
-                                            index
-                                        ),
-                                        className: classNames(
-                                            'button-remove',
-                                            `button-remove-${source}-${index}`
-                                        ),
-                                    })}
-                                </span>
-                            )}
+                            {!disabled &&
+                                !disableRemoveField(
+                                    (records && records[index]) || {},
+                                    disableRemove
+                                ) && (
+                                    <span className={classes.action}>
+                                        {cloneElement(removeButton, {
+                                            onClick: handleRemoveButtonClick(
+                                                removeButton.props.onClick,
+                                                index
+                                            ),
+                                            className: classNames(
+                                                'button-remove',
+                                                `button-remove-${source}-${index}`
+                                            ),
+                                        })}
+                                    </span>
+                                )}
                         </li>
                     </CSSTransition>
                 ))}
             </TransitionGroup>
-            {!disableAdd && (
+            {!disabled && !disableAdd && (
                 <li className={classes.line}>
                     <span className={classes.action}>
                         {cloneElement(addButton, {
@@ -307,6 +312,7 @@ export interface SimpleFormIteratorProps
     basePath?: string;
     className?: string;
     defaultValue?: any;
+    disabled?: boolean;
     disableAdd?: boolean;
     disableRemove?: boolean | DisableRemoveFunction;
     margin?: 'none' | 'normal' | 'dense';

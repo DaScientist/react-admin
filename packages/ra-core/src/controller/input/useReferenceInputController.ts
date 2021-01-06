@@ -26,7 +26,7 @@ const defaultFilter = {};
  * A hook for choosing a reference record. Useful for foreign keys.
  *
  * This hook fetches the possible values in the reference resource
- * (using `dataProvider.getMatching()`), it returns the possible choices
+ * (using `dataProvider.getList()`), it returns the possible choices
  * as the `choices` attribute.
  *
  * @example
@@ -199,7 +199,7 @@ export const useReferenceInputController = (
         // kept for backwards compatibility
         // @deprecated to be removed in 4.0
         error: dataStatus.error,
-        loading: dataStatus.waiting,
+        loading: !possibleValuesLoaded || !referenceLoaded,
         filter: filterValues,
         setFilter,
         pagination,

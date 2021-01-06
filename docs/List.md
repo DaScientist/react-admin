@@ -231,7 +231,7 @@ const exporter = (records, fetchRelatedRecords) => {
         }));
         jsonExport(data, {
             headers: ['id', 'post_id', 'post_title', 'body'],
-        }, (err, csv) => {;
+        }, (err, csv) => {
             downloadCSV(csv, 'comments');
         });
     });
@@ -799,6 +799,7 @@ React-admin proposes several UI components to let users see and modify filters, 
 - The `<FilterList>` Sidebar
   - [Usage](#the-filterlist-sidebar)
   - [Full-Text Search](#live-search)
+- [Saved Queries: Let Users Save Filter And Sort](#saved-queries-let-users-save-filter-and-sort)
 - [Building A Custom Filter](#building-a-custom-filter)
 
 ### Filter Query Parameter
@@ -1142,6 +1143,97 @@ const FilterSidebar = () => (
 );
 ```
 
+### Saved Queries: Let Users Save Filter And Sort
+
+[![Saved Queries in FilterList](https://marmelab.com/ra-enterprise/modules/assets/ra-preferences-SavedQueriesList.gif)](https://marmelab.com/ra-enterprise/modules/assets/ra-preferences-SavedQueriesList.gif)
+
+Saved Queries are an [Enterprise Edition](https://marmelab.com/ra-enterprise)<img class="icon" src="./img/premium.svg" /> feature letting users save a combination of filters and sort parameters into a new, personal filter. Saved queries persist between sessions, so users can find their custom queries even after closing and reopening the admin. Saved queries are available both for the `<Filter>` Button/Form combo and for the `<FilterList>` Sidebar:
+
+- `<FilterWithSave>` is a drop-in replacement for react-admin's `<Filter>` component
+
+```diff
+import {
+-   Filter,
+    SelectInput,
+    DateInput,
+    List,
+    Datagrid,
+    TextField,
+    NumberField,
+    DateField
+} from 'react-admin';
++import { FilterWithSave } from '@react-admin/ra-preferences';
+
+const SongFilter: FC = props => (
+-   <Filter {...props}>
++   <FilterWithSave {...props}>
+        <SelectInput
+            choices={[
+                { id: 'Apple', name: 'Apple' },
+                { id: 'Atlantic', name: 'Atlantic' },
+                { id: 'Capitol', name: 'Capitol' },
+                { id: 'Chess', name: 'Chess' },
+                { id: 'Columbia', name: 'Columbia' },
+                { id: 'DGC', name: 'DGC' },
+                { id: 'London', name: 'London' },
+                { id: 'Tamla', name: 'Tamla' },
+            ]}
+            source="recordCompany"
+        />
+        <DateInput source="released_gte" label="Released after" />
+        <DateInput source="released_lte" label="Released before" />
+-   </Filter>
++   </FilterWithSave>
+);
+
+const SongList: FC<Props> = props => (
+    <List {...props} filters={<SongFilter />}>
+        <Datagrid rowClick="edit">
+            <TextField source="title" />
+            <TextField source="artist" />
+            <TextField source="writer" />
+            <TextField source="producer" />
+            <TextField source="recordCompany" />
+            <NumberField source="rank" />
+            <DateField source="released" />
+        </Datagrid>
+    </List>
+);
+```
+
+- `<SavedFilterList>` is a complement to `<FilterList>` sections for the filter sidebar
+
+```diff
+import { FilterList, FilterListItem, List, Datagrid } from 'react-admin';
+import { Card, CardContent } from '@material-ui/core';
+
++import { SavedQueriesList } from '@react-admin/ra-preferences';
+
+const SongFilterSidebar: FC = () => (
+    <Card>
+        <CardContent>
++           <SavedQueriesList />
+            <FilterList label="Record Company" icon={<BusinessIcon />}>
+                ...
+            </FilterList>
+            <FilterList label="Released" icon={<DateRangeeIcon />}>
+               ...
+            </FilterList>
+        </CardContent>
+    </Card>
+);
+
+const SongList: FC<Props> = props => (
+    <List {...props} aside={<SongFilterSidebar />}>
+        <Datagrid>
+            ...
+        </Datagrid>
+    </List>
+);
+```
+
+For mode details about Saved Queries, check  the [`ra-preferences` module](https://marmelab.com/ra-enterprise/modules/ra-preferences#savedquerieslist-and-filterwithsave-store-user-queries-in-preferences) in React-Admin Enterprise Edition. 
+
 ### Building a Custom Filter
 
 ![Filters with submit button](./img/filter_with_submit.gif)
@@ -1299,6 +1391,20 @@ export const PostList = (props) => (
 ```
 
 You can use a similar approach to customize the list filter completely, e.g. to display the filters in a sidebar, or as a line in the datagrid, etc.
+
+### Global Search
+
+Although list filters allow to make precise queries using per-field criteria, users often prefer simpler interfaces like full-text search. After all, that's what they use every day on search engines, email clients, and in their file explorer. 
+
+If you want to display a full-text search allowing to look for any record in the admin using a single form input, check out [ra-search](https://marmelab.com/ra-enterprise/modules/ra-search), an [Enterprise Edition](https://marmelab.com/ra-enterprise)<img class="icon" src="./img/premium.svg" /> module.
+
+![ra-search basic](https://marmelab.com/ra-enterprise/modules/assets/ra-search-overview.gif)
+
+`ra-search` can plug to any existing search engine (ElasticSearch, Lucene, or custom search engine), and lets you customize the search results to provide quick navigation to related items, turniun the search engine into an "Omnibox": 
+
+![ra-search demo](https://marmelab.com/ra-enterprise/modules/assets/ra-search-demo.gif)
+
+For mode details about the global search, check the [`ra-search` module](https://marmelab.com/ra-enterprise/modules/ra-search) in React-Admin Enterprise Edition. 
 
 ## Sorting The List
 
@@ -1667,8 +1773,9 @@ export const PaginationActions = props => <RaPaginationActions {...props} color=
 export const Pagination = props => <RaPagination {...props} ActionsComponent={PaginationActions} />;
 
 export const UserList = props => (
-    <List {...props} pagination={<Pagination />}>
-    </List>
+    <List {...props} pagination={<Pagination />} />
+        ...
+    </List
 );
 ```
 
@@ -1707,6 +1814,7 @@ You can use `ListBase` to create your own custom List component, like this one:
 
 ```jsx
 import * as React from 'react';
+import { cloneElement } from 'react';
 import { 
     Datagrid,
     ListBase,
@@ -1725,7 +1833,7 @@ const PostList = props => (
     </MyList>
 );
 
-const MyList = props => (
+const MyList = ({children, ...props}) => (
     <ListBase {...props}>
         <h1>{props.title}</h1>
         <ListToolbar
@@ -1804,7 +1912,7 @@ You can find many usage examples of `useListContext` in this page, including:
 - [Building an Aside Component](#aside-aside-component)
 - [Building a Custom Empty Page](#empty-empty-page-component)
 - [Building a Custom Filter](#building-a-custom-filter)
-- [Building a Custom Sort Control](##building-a-custom-sort-control)
+- [Building a Custom Sort Control](#building-a-custom-sort-control)
 - [Building a Custom Pagination Control](#building-a-custom-pagination-control)
 - [Building a Custom Iterator](#using-a-custom-iterator)
 
@@ -2210,12 +2318,22 @@ const PostList = props => (
 export default withStyles(styles)(PostList);
 ```
 
-**Tip**: You can use the `<Datagrid>` component with [custom queries](./Actions.md#usequery-hook), provided you pass the result to a `<ListContextProvider>`:
+### With Custom Query
+
+You can use the `<Datagrid>` component with [custom queries](./Actions.md#usequery-hook), provided you pass the result to a `<ListContextProvider>`:
 
 {% raw %}
 ```jsx
 import keyBy from 'lodash/keyBy'
-import { useQuery, Datagrid, TextField, Pagination, Loading, ListContextProvider } from 'react-admin'
+import {
+    useQuery,
+    ResourceContextProvider,
+    ListContextProvider
+    Datagrid,
+    TextField,
+    Pagination,
+    Loading,
+} from 'react-admin'
 
 const CustomList = () => {
     const [page, setPage] = useState(1);
@@ -2237,27 +2355,28 @@ const CustomList = () => {
         return <p>ERROR: {error}</p>
     }
     return (
-        <ListContextProvider
-            value={{
-                resource: 'posts',
-                basePath: '/posts',
-                data: keyBy(data, 'id'),
-                ids: data.map(({ id }) => id),
-                currentSort: { field: 'id', order: 'ASC' },
-                selectedIds: [],
-            }}
-        >
-            <Datagrid rowClick="edit">
-                <TextField source="id" />
-                <TextField source="title" />
-            </Datagrid>
-            <Pagination
-                page={page}
-                perPage={perPage}
-                setPage={setPage}
-                total={total}
-            />
-        </ListContextProvider>
+        <ResourceContextProvider value="posts">
+            <ListContextProvider
+                value={{
+                    basePath: '/posts',
+                    data: keyBy(data, 'id'),
+                    ids: data.map(({ id }) => id),
+                    currentSort: { field: 'id', order: 'ASC' },
+                    selectedIds: [],
+                }}
+            >
+                <Datagrid rowClick="edit">
+                    <TextField source="id" />
+                    <TextField source="title" />
+                </Datagrid>
+                <Pagination
+                    page={page}
+                    perPage={perPage}
+                    setPage={setPage}
+                    total={total}
+                />
+            </ListContextProvider>
+        </ResourceContextProvider>
     );
 }
 ```

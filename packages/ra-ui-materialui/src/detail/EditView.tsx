@@ -175,7 +175,9 @@ const sanitizeRestProps = ({
     location = null,
     match = null,
     onFailure = null,
+    onFailureRef = null,
     onSuccess = null,
+    onSuccessRef = null,
     options = null,
     permissions = null,
     save = null,
@@ -185,5 +187,6 @@ const sanitizeRestProps = ({
     setTransform = null,
     successMessage = null,
     transform = null,
+    transformRef = null,
     ...rest
 }) => rest;
